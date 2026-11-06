@@ -1,7 +1,7 @@
 # Investment Portfolio Optimization & Efficient Frontier Analysis
 
 [![Excel](https://img.shields.io/badge/Model-Microsoft_Excel-217346?style=flat&logo=microsoftexcel&logoColor=white)](https://github.com/Kaisix7/Investment-Portfolio/blob/main/Investment%20Portfolio.xlsx)
-[![Methodology](https://img.shields.io/badge/Theory-Modern_Portfolio_Theory_(MPT)-0284c7?style=flat)](https://en.wikipedia.org/wiki/Modern_portfolio_theory)
+[![Methodology](https://img.shields.io/badge/Theory-Modern_Portfolio_Theory_MPT-0284c7?style=flat)](https://en.wikipedia.org/wiki/Modern_portfolio_theory)
 [![Optimization](https://img.shields.io/badge/Optimization-Excel_Solver-f59e0b?style=flat)](https://www.solver.com/)
 [![License](https://img.shields.io/badge/License-MIT-emerald?style=flat)](LICENSE)
 
