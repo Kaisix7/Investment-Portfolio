@@ -92,12 +92,25 @@ In Excel:
 =SLOPE(H3:H1256, $M$3:$M$1256)
 ```
 
-### 4. Variance-Covariance Matrix ($\Sigma$)
-Population variance and covariance are computed across all asset pairs:
+### 4. Variance-Covariance Matrix ($\mathbf{\Sigma}$)
+The $5 \times 5$ symmetric variance-covariance matrix is formulated using daily returns ($T = 1,253$ return steps):
+- **Diagonal Elements ($\sigma_i^2$, for $i = j$)**: Represent the **population variance** of asset $i$, calculated in Excel using:
+  $$\sigma_i^2 = \text{Var}_P(R_i) = \frac{1}{T} \sum_{t=1}^T (R_{i,t} - \mu_i)^2 \quad \longrightarrow \quad \text{Excel: } =VARP(ПОРТФЕЛЬ!\$H\$3:\$H\$1255)$$
+  *(Note: In Excel, `=VARP` computes single-asset population variance, not covariance between two distinct series).*
+- **Off-Diagonal Elements ($\sigma_{ij}$, for $i \ne j$)**: Represent the pairwise **population covariance** between assets $i$ and $j$:
+  $$\sigma_{ij} = \text{Cov}_P(R_i, R_j) = \frac{1}{T} \sum_{t=1}^T (R_{i,t} - \mu_i)(R_{j,t} - \mu_j) \quad \longrightarrow \quad \text{Excel: } =COVARIANCE.P(\dots)$$
+  In the workbook, the lower-triangular cells contain the evaluated population covariances, while the upper-triangular cells mirror them via direct cell references (e.g., cell `S13` is `=R14`) to ensure exact matrix symmetry.
 
-$$\text{Cov}(R_i, R_j) = \frac{1}{T} \sum_{t=1}^T (R_{i,t} - \mu_i)(R_{j,t} - \mu_j) \quad \longrightarrow \quad \text{Excel: } =VARP(ПОРТФЕЛЬ!\$H\$3:\$H\$1255)$$
+### 5. Annualized Returns Terminology
+Quantitative portfolio modeling distinguishes between arithmetic expected return and geometric compounded return:
+- **Annualized Arithmetic Expected Return**:
+  $$E(R)_{\text{arith, ann}} = E(R_{\text{daily}}) \times 252$$
+  This linear scaling represents the annual expected arithmetic return assumed in single-period Markowitz Modern Portfolio Theory (MPT), since mathematical expectation is a linear operator: $E\left[\sum_{t=1}^{252} R_t\right] = 252 \times E[R_t]$.
+- **Compounded Annual Growth Rate (CAGR) / Geometric Return**:
+  $$\text{CAGR} = \left(\frac{P_T}{P_0}\right)^{\frac{252}{T}} - 1 \approx E(R)_{\text{arith, ann}} - \frac{1}{2}\sigma_{\text{ann}}^2$$
+  This reflects true multi-year capital compounding. The difference between arithmetic return and CAGR is driven by **volatility drag** ($\approx \frac{1}{2}\sigma^2$), which heavily penalizes high-volatility assets.
 
-### 5. Portfolio Variance & Matrix Formulation
+### 6. Portfolio Variance & Matrix Formulation
 Using matrix multiplication, portfolio variance for weight vector $\mathbf{w} = [w_1, \dots, w_5]^T$ is:
 
 $$\sigma_p^2 = \mathbf{w}^T \mathbf{\Sigma} \mathbf{w} = \sum_{i=1}^n \sum_{j=1}^n w_i w_j \sigma_{ij}$$
@@ -107,11 +120,11 @@ In Excel:
 =MMULT(TRANSPOSE(W13:W17), MMULT(R13:V17, W13:W17))
 ```
 
-### 6. Portfolio Expected Return & Beta
+### 7. Portfolio Expected Return & Beta
 $$\mu_p = \sum_{i=1}^n w_i E(R_i) \quad \longrightarrow \quad \text{Excel: } =SUMPRODUCT(W13:W17, X13:X17)$$
 $$\beta_p = \sum_{i=1}^n w_i \beta_i \quad \longrightarrow \quad \text{Excel: } =W13*R7 + W14*S7 + W15*T7 + W16*U7 + W17*V7$$
 
-### 7. Global Minimum Variance Optimization Formulation
+### 8. Global Minimum Variance Optimization Formulation
 Excel Solver was executed with the following objective and constraints:
 - **Objective**: Minimize $\sigma_p^2$ (Cell `R19`)
 - **By Changing Variable Cells**: Weights $\mathbf{w}$ (Cells `W13:W17`)
@@ -147,17 +160,20 @@ In a minimum-variance objective, the optimizer allocates heavily towards assets 
 
 ### Summary Statistics of Analyzed Assets (5-Year Horizon)
 
-| Asset / Benchmark | Daily Return $E(R)$ | Annualized Return | Daily Variance $\sigma^2$ | Daily Std Dev $\sigma$ | Annualized Volatility | CAPM Beta $\beta$ | Weight ($w$) |
-|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Apple (AAPL)** | 0.0833% | 20.99% | 0.00031163 | 1.7653% | 28.02% | 1.1741 | 7.94% |
-| **Tesla (TSLA)** | 0.0773% | 19.48% | 0.00141450 | 3.7610% | 59.70% | 2.0749 | 2.19% |
-| **Coca-Cola (KO)** | 0.0485% | 12.21% | 0.00011364 | 1.0660% | 16.92% | 0.2473 | 41.58% |
-| **McDonald's (MCD)** | 0.0101% | 2.54% | 0.00012882 | 1.1350% | 18.02% | 0.3575 | 30.50% |
-| **Walmart (WMT)** | 0.0799% | 20.15% | 0.00020308 | 1.4251% | 22.62% | 0.4035 | 17.79% |
-| **S&P 500 (^GSPC)** | 0.0466% | 11.74% | 0.00011451 | 1.0701% | 16.99% | 1.0000 | *Benchmark* |
-| **GMV Portfolio** | **0.0458%** | **11.53%** | **0.00008013** | **0.8952%** | **14.21%** | **0.4223** | **100.00%** |
+| Asset / Benchmark | Daily Return $E(R)$ | Annualized Arithmetic Return ($E(R) \times 252$) | 5-Year CAGR (Compounded) | Daily Variance $\sigma^2$ | Daily Std Dev $\sigma$ | Annualized Volatility ($\sigma \times \sqrt{252}$) | CAPM Beta $\beta$ | Weight ($w$) |
+|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **Apple (AAPL)** | 0.0833% | 20.99% | 18.53% | 0.00031163 | 1.7653% | 28.02% | 1.1741 | 7.94% |
+| **Tesla (TSLA)** | 0.0773% | 19.48% | 1.87% | 0.00141450 | 3.7610% | 59.70% | 2.0749 | 2.19% |
+| **Coca-Cola (KO)** | 0.0485% | 12.21% | 11.29% | 0.00011364 | 1.0660% | 16.92% | 0.2473 | 41.58% |
+| **McDonald's (MCD)** | 0.0101% | 2.54% | 1.00% | 0.00012882 | 1.1350% | 18.02% | 0.3575 | 30.50% |
+| **Walmart (WMT)** | 0.0799% | 20.15% | 19.43% | 0.00020308 | 1.4251% | 22.62% | 0.4035 | 17.79% |
+| **S&P 500 (^GSPC)** | 0.0466% | 11.74% | 10.82% | 0.00011451 | 1.0701% | 16.99% | 1.0000 | *Benchmark* |
+| **GMV Portfolio** | **0.0458%** | **11.53%** | **10.52%** | **0.00008013** | **0.8952%** | **14.21%** | **0.4223** | **100.00%** |
 
-*Note: Annualized return is scaled by $252$ trading days ($E(R) \times 252$). Annualized volatility is scaled by $\sqrt{252}$ ($\sigma \times \sqrt{252}$).*
+*Methodological Clarification*:
+- **Annualized Arithmetic Return** ($E(R) \times 252$) is the linear expected annual return modeled in classical Modern Portfolio Theory.
+- **Compounded Annual Growth Rate (CAGR)** ($(P_T / P_0)^{252/T} - 1$) reflects actual realized geometric multi-year compounding. Notice the massive gap for Tesla ($19.48\%$ arithmetic vs. $1.87\%$ CAGR), caused by extreme volatility drag ($\approx \frac{1}{2}\sigma_{\text{ann}}^2 \approx 17.8\%$).
+- **Annualized Volatility** scales daily standard deviation by the square root of time: $\sigma_{\text{ann}} = \sigma_{\text{daily}} \times \sqrt{252}$.
 
 ### Correlation Matrix ($\rho_{ij}$)
 
@@ -177,25 +193,41 @@ The pairwise correlation matrix demonstrates why diversification is so potent ac
 
 ## Efficient Frontier
 
-### Mathematical Formulation of the Efficient Frontier
-For a given set of expected returns $\mathbf{\mu}$ and covariance matrix $\mathbf{\Sigma}$, any minimum-variance portfolio for target return $r$ satisfies:
+### Mathematical Formulation & Unconstrained vs. Long-Only Frontier
+
+For a given vector of expected returns $\mathbf{\mu}$ and variance-covariance matrix $\mathbf{\Sigma}$, the analytical minimum-variance portfolio for any target expected return $r$ under unconstrained weights satisfies the Markowitz hyperbola:
 
 $$\sigma^2(r) = \frac{A r^2 - 2B r + C}{\Delta}$$
 
 where:
 - $A = \mathbf{1}^T \mathbf{\Sigma}^{-1} \mathbf{1} \approx 12,479.76$
-- $B = \mathbf{1}^T \mathbf{\Sigma}^{-1} \mathbf{\mu} \approx 5.7101$
+- $B = \mathbf{1}^T \mathbf{\Sigma}^{-1} \mathbf{\mu} \approx 5.710142$
 - $C = \mathbf{\mu}^T \mathbf{\Sigma}^{-1} \mathbf{\mu} \approx 0.005674$
 - $\Delta = AC - B^2 \approx 38.2000$
 
-The Global Minimum Variance vertex occurs at:
+#### Global Minimum Variance (GMV) Portfolio
+The vertex of this hyperbola represents the Global Minimum Variance portfolio:
+- **GMV Expected Return**:
+  $$\mu_{GMV} = \frac{B}{A} = \frac{5.710142}{12,479.76} \approx 0.04576\% \text{ daily} \quad (\approx 11.53\% \text{ annualized})$$
+- **GMV Portfolio Variance**:
+  $$\sigma_{GMV}^2 = \frac{1}{A} = \frac{1}{12,479.76} \approx 8.01298 \times 10^{-5}$$
+- **GMV Portfolio Standard Deviation**:
+  $$\sigma_{GMV} = \frac{1}{\sqrt{A}} = \frac{1}{\sqrt{12,479.76}} \approx 0.0089515 = 0.89515\% \text{ daily} \quad (\approx 14.21\% \text{ annualized})$$
+  *(Note: Portfolio variance is $\sigma^2 = 1/A$, while portfolio standard deviation is $\sigma = 1/\sqrt{A}$).*
 
-$$\mu_{GMV} = \frac{B}{A} = 0.04576\% \text{ daily} \quad (\approx 11.53\% \text{ p.a.})$$
-$$\sigma_{GMV} = \sqrt{\frac{1}{A}} = 0.89515\% \text{ daily} \quad (\approx 14.21\% \text{ p.a.})$$
+#### Analytical Frontier vs. Long-Only Constraints ($w_i \ge 0$)
+A crucial mathematical finding from this audit concerns the compatibility between the analytical formula and the long-only constraints ($w_i \ge 0$):
+1. **At the GMV Vertex**: The analytical weight vector is:
+   $$\mathbf{w}_{GMV} = \frac{\mathbf{\Sigma}^{-1}\mathbf{1}}{A} = [7.94\%, 2.19\%, 41.58\%, 30.50\%, 17.79\%]^T$$
+   Because every constituent weight is strictly positive, the unconstrained GMV portfolio **naturally satisfies the long-only condition without any active constraints**. Thus, the analytical solution and the Excel Solver constrained solution are mathematically identical to 8 decimal places.
+2. **Along the Remainder of the Frontier**: As the target return $r$ varies along the unconstrained analytical frontier $\mathbf{w}(r) = \mathbf{g} + \mathbf{h}r$:
+   - For high target returns ($r > 0.065\%$ daily), the optimal weight for **McDonald's becomes negative** (e.g., $w_{MCD} = -24.79\%$ at $r = 0.080\%$).
+   - For low target returns ($r < 0.035\%$ daily), **Apple and Walmart weights become negative** (e.g., $w_{AAPL} = -10.84\%$ at $r = 0.010\%$).
+   - Consequently, the continuous analytical hyperbola **assumes short sales are permitted** and is **not compatible with long-only constraints** across the entire curve. Tracing a true long-only frontier requires solving a quadratic programming problem with inequality constraints ($w_i \ge 0$) for each target return level.
 
-### Excel Solver Implementation Status
-- **Implemented Optimization**: In the workbook [`Investment Portfolio.xlsx`](Investment%20Portfolio.xlsx), **Excel Solver was explicitly implemented to find the Global Minimum Variance (GMV) Portfolio** (Objective: Cell `R19` minimized; Variables: `W13:W17`; Constraints: $\sum w_i = 1$ and $w_i \ge 0$).
-- **Frontier Table Structure**: A data table placeholder (cells `Q26:R36`) and chart reference for plotting intermediate frontier points were structured into the workbook architecture. The workbook directly provides the optimal vertex (GMV), from which the full continuous Efficient Frontier illustrated above is derived.
+### Excel Solver Implementation Scope
+- **Verified Implementation**: In [`Investment Portfolio.xlsx`](Investment%20Portfolio.xlsx), **Excel Solver was configured and executed specifically for the Global Minimum Variance (GMV) Portfolio** (minimizing cell `R19` subject to $\sum w_i = 1$ and $w_i \ge 0$).
+- **Multi-Point Table Architecture**: The worksheet includes column headers and reserved rows (`Q26:R36`) for an Efficient Frontier table and an associated chart object. However, individual intermediate frontier points were not solved via Solver in the workbook. The chart in `images/efficient-frontier.png` plots the continuous Markowitz frontier alongside the verified GMV Solver optimum.
 
 ---
 
@@ -225,8 +257,16 @@ $$\sigma_{GMV} = \sqrt{\frac{1}{A}} = 0.89515\% \text{ daily} \quad (\approx 14.
 3. **Asset Volatility Asymmetry**:
    Tesla exhibited more than $3.5\times$ the daily standard deviation of Coca-Cola ($3.761\%$ vs $1.066\%$). In a variance-minimizing mandate, even high expected returns cannot overcome quadratic volatility penalties, resulting in Tesla receiving a minimal allocation ($2.19\%$).
 
-4. **Technical Formula Clarification in Workbook**:
-   In cell `R22`, the Sharpe Ratio formula is written as `=(R21-R23)/R20`, which directly subtracts the annualized 2.37% Treasury yield from the daily expected return ($0.0458\%$). While this produces a nominal negative number in Excel due to frequency mismatch, converting the risk-free rate to daily ($2.37\% / 252 \approx 0.009405\%$) reveals an actual positive daily Sharpe ratio of **$0.0406$** (or **$0.6446$** annualized).
+4. **Sharpe Ratio Frequency Consistency & Audit**:
+   - In Excel cell `R22`, the formula is written as `=(R21-R23)/R20`, which subtracts the annualized 2.37% Treasury yield (Cell `R23`) directly from the daily expected return ($0.0458\%$, Cell `R21`), dividing by daily standard deviation ($0.8952\%$, Cell `R20`). This produces a nominal $-2.5965$ due to dimensional frequency mismatch.
+   - **Mathematically Consistent Daily Sharpe Ratio**:
+     $$R_{f,\text{daily}} = \frac{2.37\%}{252} \approx 0.009405\%$$
+     $$\text{Sharpe}_{\text{daily}} = \frac{E(R_{p,\text{daily}}) - R_{f,\text{daily}}}{\sigma_{p,\text{daily}}} = \frac{0.00045755 - 0.00009405}{0.00895152} \approx \mathbf{0.0406}$$
+   - **Mathematically Consistent Annualized Sharpe Ratio**:
+     $$\text{Sharpe}_{\text{ann}} = \frac{E(R_{p,\text{ann}}) - R_{f,\text{ann}}}{\sigma_{p,\text{ann}}} = \frac{11.5303\% - 2.3700\%}{14.2101\%} \approx \mathbf{0.6446}$$
+     Equivalently, via square-root-of-time scaling:
+     $$\text{Sharpe}_{\text{ann}} = \text{Sharpe}_{\text{daily}} \times \sqrt{252} \approx 0.040608 \times \sqrt{252} \approx \mathbf{0.6446}$$
+   - *Workbook Preservation Note*: In accordance with preserving the original submission workbook, the Excel formulas have been maintained as originally calculated, and the frequency-consistent metrics are fully detailed here for quantitative audit purposes.
 
 ---
 
